@@ -1,0 +1,93 @@
+.home {
+    margin-top: 50px;
+    background-color: #E2DAD6;
+    border-radius: 10px;
+    box-shadow: 10px 5px 5px dimgrey;
+    text-align: center;
+}
+
+body {
+    background-color: #7FA1C3;
+}
+
+footer {
+    margin-top: 20px;
+}
+
+.main {
+    display: flex;
+}
+
+.form {
+    margin-top: 50px;
+    background: white;
+    box-shadow: 10px 5px 5px dimgrey;
+}
+
+.first-row {
+    margin-top: 20px;
+    height: 100px;
+}
+
+.custom-file {
+    margin-top: 25px;
+    margin-left: 10px;
+}
+
+img {
+    height: 100px;
+    width: 150px;
+}
+
+.second-row {
+    margin-bottom: 50px;
+}
+
+.third-row {
+    margin-bottom: 100px;
+}
+
+.second-row > div {
+    justify-content: center;
+}
+
+p {
+    text-align: center;
+}
+
+.flex {
+    justify-content: space-between;
+    display: flex;
+}
+
+.name {
+    gap: 5px;
+}
+
+.right {
+    align-self: flex-end;
+}
+
+.name-container {
+    margin-top: 50px;
+    margin-bottom: 50px;
+}
+
+.side {
+    margin-left: 10px;
+    margin-top: 50px;
+}
+
+.invisible {
+    visibility: hidden;
+}
+
+tr {
+    justify-self: center;
+}
+
+.add-row {
+    margin-left: 15px;
+    border-radius: 25%;
+}
+
