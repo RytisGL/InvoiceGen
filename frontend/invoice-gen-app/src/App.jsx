@@ -1,9 +1,9 @@
 import './App.css';
 import {BrowserRouter, Routes, Route} from 'react-router-dom'
-import NotFound from './Components/NotFound'
-import Generator from './Components/Generator'
-import NavBar from './Components/NavBar.jsx'
-import Footer from './Components/Footer.jsx'
+import NotFound from './components/NotFound.jsx'
+import Generator from './components/Generator.jsx'
+import NavBar from './components/NavBar.jsx'
+import Footer from './components/Footer.jsx'
 
 
 function App() {
