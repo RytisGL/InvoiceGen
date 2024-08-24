@@ -4,7 +4,7 @@ import {useEffect, useState} from "react";
 import {jsPDF} from "jspdf";
 import InfoInputs from "./InfoInputs.jsx";
 import {Button} from "@mui/material";
-
+import GenerateBtn from "./GenerateBtn.jsx";
 
 export default function Generator() {
     const [components, setComponents] = useState([<GenData index={0} key={0} sendDataToParent={handleProductInputs}/>]);
@@ -13,7 +13,6 @@ export default function Generator() {
         field1: "", field2: "", field3: "", field4: "", field5: ""
     }]);
     const [logo, setLogo] = useState();
-
     const [titleInputs, setTitleInputs] = useState({
         serial: "",
         date: "",
@@ -24,7 +23,9 @@ export default function Generator() {
         buyerName: "",
         buyerAddress: "",
         buyerCmpnyCode: "",
-        buyerTaxCode: ""
+        buyerTaxCode: "",
+        issuedBy: "",
+        contactInfo: ""
     });
 
     useEffect(() => {
@@ -40,7 +41,7 @@ export default function Generator() {
     }
 
     const addComponent = () => {
-        if (components.length < 5) {
+        if (components.length < 15) {
             setComponents(prevComponents => {
                 const newComponentIndex = prevComponents.length;
 
@@ -96,14 +97,11 @@ export default function Generator() {
         }));
     }
 
-
     function generate() {
         const doc = new jsPDF();
 
-        // Set a font that supports UTF-8 (including Lithuanian letters)
-        doc.setFont("helvetica", "normal");
-
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
         const centerX = pageWidth / 2;
 
         if (logo !== undefined) {
@@ -112,51 +110,54 @@ export default function Generator() {
 
         // Set the title
         doc.setFontSize(22);
+        doc.setFont("arialuni");
         const title = 'PVM sąskaita faktūra';
         const titleWidth = doc.getTextWidth(title);
-        doc.text(title, centerX - titleWidth / 2, 30);
+        doc.text(title, centerX - titleWidth / 2, 19);
 
         // Set serial and date centered below the title
-        doc.setFontSize(12);
+        doc.setFontSize(8);
 
         const serialText = 'Serija: ' + titleInputs.serial;
         const dateText = 'Data: ' + titleInputs.date;
         const serialTextWidth = doc.getTextWidth(serialText);
         const dateTextWidth = doc.getTextWidth(dateText);
 
-        doc.text(serialText, centerX - serialTextWidth / 2, 40);
-        doc.text(dateText, centerX - dateTextWidth / 2, 50);
+        doc.text(serialText, centerX - serialTextWidth / 2, 25);
+        doc.text(dateText, centerX - dateTextWidth / 2, 30);
+
+        doc.setFontSize(9);
 
         // Seller Information
-        doc.text('Pardavėjas:', 20, 70);
-        doc.text(titleInputs.sellerName, 20, 80);
-        doc.text(titleInputs.sellerAddress, 20, 90);
-        doc.text(titleInputs.sellerCmpnyCode, 20, 100);
-        doc.text(titleInputs.sellerTaxCode, 20, 110);
+        doc.text('Pardavėjas:', 20, 45);
+        doc.text(titleInputs.sellerName, 20, 50);
+        doc.text(titleInputs.sellerAddress, 20, 55);
+        doc.text(titleInputs.sellerCmpnyCode, 20, 60);
+        doc.text(titleInputs.sellerTaxCode, 20, 65);
 
         // Buyer Information
-        doc.text('Pirkėjas:', 120, 70);
-        doc.text(titleInputs.buyerName, 120, 80);
-        doc.text(titleInputs.buyerAddress, 120, 90);
-        doc.text(titleInputs.buyerCmpnyCode, 120, 100);
-        doc.text(titleInputs.buyerTaxCode, 120, 110);
+        doc.text('Pirkėjas:', 120, 45);
+        doc.text(titleInputs.buyerName, 120, 50);
+        doc.text(titleInputs.buyerAddress, 120, 55);
+        doc.text(titleInputs.buyerCmpnyCode, 120, 60);
+        doc.text(titleInputs.buyerTaxCode, 120, 65);
 
         // Table Setup
-        const startY = 130; // Starting Y position for table
-        const rowHeight = 10; // Height of each table row
-        const padding = 2; // Padding to move content away from dividing lines
+        const startY = 80; // Starting Y position for table
+        const rowHeight = 8; // Reduced height to fit text better
+        const padding = 1.5; // Padding to adjust text within the row
 
         const totalWidth = pageWidth - 20; // Full table width
         const colWidths = {
             nr: 10,
-            pavadinimas: totalWidth * 0.2,
-            matVnt: totalWidth * 0.1,
+            pavadinimas: totalWidth * 0.38,  // Increased width for Pavadinimas
+            matVnt: totalWidth * 0.066, // Reduced width for Mat
             kiekis: totalWidth * 0.07,
             kaina: totalWidth * 0.07,
             suma: totalWidth * 0.12,
-            pvmTarifas: totalWidth * 0.12 * 1.2,
+            pvmTarifas: totalWidth * 0.08, // Increased width for PVM%
             pvmSuma: totalWidth * 0.07,
-            total: totalWidth * 0.15
+            total: totalWidth * 0.108 // Reduced width for Total
         };
 
         const colX = {
@@ -177,10 +178,22 @@ export default function Generator() {
         doc.rect(10, startY, pageWidth - 20, rowHeight, 'F');
 
         // Centered Table Headers
+        const headers = {
+            nr: 'Nr.',
+            pavadinimas: 'Pavadinimas',
+            matVnt: 'Mat',
+            kiekis: 'Kiekis',
+            kaina: 'Kaina',
+            suma: 'Suma',
+            pvmTarifas: 'PVM%',
+            pvmSuma: 'PVM',
+            total: 'Total'
+        };
+
         Object.keys(colX).forEach(key => {
-            const text = key === 'pvmSuma' ? 'PVM' : key.charAt(0).toUpperCase() + key.slice(1);
+            const text = headers[key];
             const textWidth = doc.getTextWidth(text);
-            doc.text(text, colX[key] + colWidths[key] / 2 - textWidth / 2, startY + 7);
+            doc.text(text, colX[key] + colWidths[key] / 2 - textWidth / 2, startY + rowHeight - padding);
         });
 
         // Reset font style for table rows
@@ -206,13 +219,13 @@ export default function Generator() {
             const rowValues = [
                 (index + 1).toString(), row.field1, row.field2,
                 row.field3, row.field4, suma.toFixed(2),
-                row.field5 + '%', pvmSum.toFixed(2), total.toFixed(2)
+                row.field5, pvmSum.toFixed(2), total.toFixed(2)
             ];
 
             Object.keys(colX).forEach((key, i) => {
                 const text = rowValues[i];
                 const textWidth = doc.getTextWidth(text);
-                doc.text(text, colX[key] + colWidths[key] / 2 - textWidth / 2, yOffset + 7 - padding);
+                doc.text(text, colX[key] + colWidths[key] / 2 - textWidth / 2, yOffset + rowHeight - padding);
             });
 
             // Draw lines
@@ -242,6 +255,15 @@ export default function Generator() {
         // Convert total sum to Lithuanian words
         const sumaWordsText = 'Suma žodžiais: ' + numberToWordsInLithuanian(totalSum);
         doc.text(sumaWordsText, 10, yOffset + 15);
+
+        // Add "Sąskaitą išrašė:" 10 points above the "Kontaktinė informacija:" on the left side
+        const issuedByText = 'Sąskaitą išrašė: ' + titleInputs.issuedBy;
+        doc.text(issuedByText, 10, pageHeight - 25);
+
+        // Add "Kontaktinė informacija:" centered at the bottom, 10 points lower
+        const contactInfoText = 'Kontaktinė informacija: ' + titleInputs.contactInfo;
+        const contactInfoTextWidth = doc.getTextWidth(contactInfoText);
+        doc.text(contactInfoText, centerX - contactInfoTextWidth / 2, pageHeight - 10);
 
         // Save the PDF
         doc.save('invoice.pdf');
@@ -288,7 +310,12 @@ export default function Generator() {
 
             if (thousandsPart > 0) {
                 result += convertThreeDigitNumber(thousandsPart) + ' ';
-                result += thousandsPart === 1 ? thousands[0] : thousands[1] + ' ';
+                if (thousandsPart < 10 || thousandsPart > 20) {
+                    result += thousandsPart === 1 ? thousands[0] : thousands[1];
+                } else {
+                    result += thousandsPart === 1 ? thousands[0] : thousands[2];
+                }
+                result += ' ';
             }
 
             if (remainderPart > 0) {
@@ -302,8 +329,25 @@ export default function Generator() {
         const fractionalWords = fractionalPart > 0 ? convertToWords(fractionalPart) : '';
 
         let result = integerWords;
+
+        // Handle Euro endings based on the last character of the integerWords
+        if (integerWords.endsWith('s') && integerWords.charAt(integerWords.length - 3) !== 't') {
+            result += ' euras';
+        } else if (integerWords.endsWith('i') || integerWords.endsWith('u')) {
+            result += ' eurai';
+        } else {
+            result += ' eurų';
+        }
+
+        // Handle Cent endings based on the last character of the fractionalWords
         if (fractionalWords) {
-            result += ` ir ${fractionalWords} centai`;
+            if (fractionalWords.endsWith('s')) {
+                result += ` ir ${fractionalWords} centas`;
+            } else if (fractionalWords.endsWith('i') || fractionalWords.endsWith('u')) {
+                result += ` ir ${fractionalWords} centai`;
+            } else {
+                result += ` ir ${fractionalWords} centų`;
+            }
         }
 
         return result;
@@ -322,7 +366,7 @@ export default function Generator() {
                         </div>
                     </div>
                     <div className="flex row">
-                        <div className="col-sm-4">
+                        <div className="col-sm-6">
                             <h3>Pardavėjas:</h3>
                             <InfoInputs sendDataToParent={handleTitleInputs} id={"sellerName"}
                                         placeHldr={"Įmonės pavadinimas"}/>
@@ -333,7 +377,7 @@ export default function Generator() {
                             <InfoInputs sendDataToParent={handleTitleInputs} id={"sellerTaxCode"}
                                         placeHldr={"PVM mokėtojo kodas"}/>
                         </div>
-                        <div className="col-sm-4">
+                        <div className="col-sm-6">
                             <h3>Pardavėjas:</h3>
                             <InfoInputs sendDataToParent={handleTitleInputs} id={"buyerName"}
                                         placeHldr={"Įmonės pavadinimas"}/>
@@ -377,25 +421,24 @@ export default function Generator() {
                 </Button>
                 <div className="name-container container">
                     <div className="name row col-sm-4">
-                        <div style={{marginLeft: "20px"}}>
+                        <div>
                             <p>Sąskaitą išrašė:</p>
-                            <div className="form-group">
-                                <input type="text" className="form-control form-control-sm"/>
-                            </div>
+                            <InfoInputs sendDataToParent={handleTitleInputs} id={"issuedBy"}
+                                        placeHldr={"Vardas Vardaitis"}/>
                         </div>
                     </div>
                 </div>
                 <div className="container">
                     <div className="row" style={{justifyContent: "center"}}>
                         <div className="col-sm-4">
-                            <div className="form-group">
-                                <input type="text" className="form-control form-control-sm"
-                                       placeholder="Kontaktinė informacija (Nebūtina)"/>
-                            </div>
+                            <InfoInputs sendDataToParent={handleTitleInputs} id={"contactInfo"}
+                                        placeHldr={"Kontaktinė informacija (Nebūtina)"}/>
                         </div>
                     </div>
                 </div>
-                <button onClick={generate}>Generuoti</button>
+                {/*<div style={{marginBottom : "10px"}}>*/}
+                {/*    <GenerateBtn sendToParentData={generate}/>*/}
+                {/*</div>*/}
             </div>
         </div>
     )
