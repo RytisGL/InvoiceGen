@@ -1,7 +1,6 @@
 package com.invoicegen.invoicegenapi.entities;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.Cascade;
@@ -9,7 +8,7 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,24 +24,21 @@ public class Invoice {
     private Long id;
     @Column(unique=true)
     @Size(max = 50)
-    @NotNull
     private String serial;
-    @NotNull
-    private Date issueDate;
-    @NotNull
+    private LocalDate issueDate;
     @Size(max = 50)
     private String issuedBy;
     @Size(max = 50)
     private String contactInfo;
-    @OneToOne
-    @Cascade(CascadeType.ALL)
+    @ManyToOne()
+    @Cascade(CascadeType.PERSIST)
     private Company seller;
-    @OneToOne
-    @Cascade(CascadeType.ALL)
+    @ManyToOne()
+    @Cascade(CascadeType.PERSIST)
     private Company buyer;
     @OneToMany(mappedBy = "invoice")
     @Cascade(CascadeType.ALL)
-    private List<Products> products;
+    private List<Product> products;
     @CreationTimestamp
     private LocalDateTime createdAt;
     @UpdateTimestamp

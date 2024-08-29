@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Setter
 @Getter
-public class Products {
+public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,7 +32,7 @@ public class Products {
     @NotNull
     private Float unitPrice;
     @NotNull
-    private Float vatAmount;
+    private Float vatPercent;
     @ManyToOne()
     @Cascade(CascadeType.ALL)
     private Invoice invoice;

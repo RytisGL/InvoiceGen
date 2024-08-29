@@ -1,9 +1,6 @@
 package com.invoicegen.invoicegenapi.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -11,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Builder
@@ -31,6 +29,10 @@ public class Company {
     @Size(max = 50)
     @NotNull
     private String companyCode;
+    @OneToMany(mappedBy = "seller")
+    private List<Invoice> invoicesSeller;
+    @OneToMany(mappedBy = "buyer")
+    private List<Invoice> invoicesBuyer;
     @Size(max = 50)
     @NotNull
     private String companyVATCode;

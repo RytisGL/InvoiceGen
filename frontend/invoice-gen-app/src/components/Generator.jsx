@@ -5,6 +5,7 @@ import {jsPDF} from "jspdf";
 import InfoInputs from "./InfoInputs.jsx";
 import {Button} from "@mui/material";
 import GenerateBtn from "./GenerateBtn.jsx";
+import SaveBtn from "./SaveBtn.jsx";
 
 export default function Generator() {
     const [components, setComponents] = useState([<GenData index={0} key={0} sendDataToParent={handleProductInputs}/>]);
@@ -436,9 +437,12 @@ export default function Generator() {
                         </div>
                     </div>
                 </div>
-                {/*<div style={{marginBottom : "10px"}}>*/}
-                {/*    <GenerateBtn sendToParentData={generate}/>*/}
-                {/*</div>*/}
+                <div className="container">
+                    <div className="row" style={{justifyContent: "center", marginBottom : "10px"}}>
+                        <GenerateBtn sendToParentData={generate}/>
+                        <SaveBtn/>
+                    </div>
+                </div>
             </div>
         </div>
     )
