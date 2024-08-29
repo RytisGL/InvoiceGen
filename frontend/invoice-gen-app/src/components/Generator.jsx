@@ -440,7 +440,7 @@ export default function Generator() {
                 <div className="container">
                     <div className="row" style={{justifyContent: "center", marginBottom : "10px"}}>
                         <GenerateBtn sendToParentData={generate}/>
-                        <SaveBtn/>
+                        <SaveBtn data={data} titleInputs={titleInputs} />
                     </div>
                 </div>
             </div>
