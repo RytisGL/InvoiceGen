@@ -9,9 +9,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CompanyRequest {
+public class ProductResponse {
+    private Long id;
     private String name;
-    private String address;
-    private String companyCode;
-    private String companyVATCode;
+    private String unitOfMeasure;
+    private Float quantity;
+    private Float unitPrice;
+    private Float vatPercent;
 }

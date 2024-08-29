@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CompanyRequest {
+public class CompanyResponse {
+    private Long id;
     private String name;
     private String address;
     private String companyCode;

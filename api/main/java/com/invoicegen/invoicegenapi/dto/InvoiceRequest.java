@@ -1,4 +1,22 @@
 package com.invoicegen.invoicegenapi.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class InvoiceRequest {
+    private String serial;
+    private LocalDate issueDate;
+    private String issuedBy;
+    private String contactInfo;
+    private CompanyRequest seller;
+    private CompanyRequest buyer;
+    private List<ProductRequest> productList;
 }
