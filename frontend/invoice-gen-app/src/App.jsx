@@ -4,6 +4,7 @@ import NotFound from './components/NotFound.jsx'
 import Generator from './components/Generator.jsx'
 import NavBar from './components/NavBar.jsx'
 import Footer from './components/Footer.jsx'
+import Dashboard from './components/Dashboard.jsx'
 
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
                 <Routes>
                     <Route path="/">
                         <Route path="/" element={<Generator/>}/>
+                        <Route path="/dashboard" element={<Dashboard/>}/>
                         <Route path="*" element={<NotFound/>}/>
                     </Route>
                 </Routes>

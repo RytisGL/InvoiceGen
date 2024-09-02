@@ -6,6 +6,12 @@
     text-align: center;
 }
 
+.dashboard {
+    background-color: #7FA1C3;
+    margin-top: 25px;
+    min-height: 650px;
+}
+
 body {
     background-color: #7FA1C3;
 }
@@ -14,14 +20,20 @@ footer {
     margin-top: 20px;
 }
 
+.field {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    box-shadow: 5px 5px 5px dimgrey;
+}
+
 .main {
     display: flex;
 }
 
 .form {
-    margin-top: 50px;
+    margin-top: 25px;
     background: white;
-    box-shadow: 10px 5px 5px dimgrey;
+    box-shadow: 5px 5px 5px dimgrey;
 }
 
 .first-row {

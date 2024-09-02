@@ -22,7 +22,6 @@ public class Invoice {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(unique=true)
     @Size(max = 50)
     private String serial;
     private LocalDate issueDate;

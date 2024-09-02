@@ -15,25 +15,25 @@ export default function SaveBtn({ data, titleInputs }) {
                 name: titleInputs.sellerName,
                 address: titleInputs.sellerAddress,
                 companyCode: titleInputs.sellerCmpnyCode,
-                taxCode: titleInputs.sellerTaxCode,
+                companyVATCode: titleInputs.sellerTaxCode,
             },
             buyer: {
                 name: titleInputs.buyerName,
                 address: titleInputs.buyerAddress,
                 companyCode: titleInputs.buyerCmpnyCode,
-                taxCode: titleInputs.buyerTaxCode,
+                companyVATCode: titleInputs.buyerTaxCode,
             },
             productList: data.map((item) => ({
-                productName: item.field1,
-                quantity: item.field2,
-                price: item.field3,
-                description: item.field4,
-                totalPrice: item.field5,
+                name: item.field1,
+                unitOfMeasure: item.field2,
+                quantity: item.field3,
+                unitPrice: item.field4,
+                vatPercent: item.field5,
             })),
         };
 
         try {
-            const response = await axios.post("localhost:8080/invoice", invoiceRequest);
+            const response = await axios.post("http://localhost:8080/api/v1/invoice", invoiceRequest);
             console.log("Invoice created successfully:", response.data);
             // Handle success (e.g., display a success message or redirect)
         } catch (error) {

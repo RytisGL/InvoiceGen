@@ -13,7 +13,7 @@ import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 
-const pages = ['Prisijungti', 'Registruotis'];
+const pages = ['Prisijungti', 'Registruotis', 'Dashboard'];
 const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
 
 export default function NavBar() {

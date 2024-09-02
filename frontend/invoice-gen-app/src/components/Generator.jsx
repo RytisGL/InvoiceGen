@@ -1,9 +1,9 @@
+import {Button} from "@mui/material";
 import ImageUpload from "./ImageUpload.jsx";
 import GenData from "./GenData.jsx"
 import {useEffect, useState} from "react";
 import {jsPDF} from "jspdf";
 import InfoInputs from "./InfoInputs.jsx";
-import {Button} from "@mui/material";
 import GenerateBtn from "./GenerateBtn.jsx";
 import SaveBtn from "./SaveBtn.jsx";
 
@@ -262,10 +262,11 @@ export default function Generator() {
         doc.text(issuedByText, 10, pageHeight - 25);
 
         // Add "Kontaktinė informacija:" centered at the bottom, 10 points lower
-        const contactInfoText = 'Kontaktinė informacija: ' + titleInputs.contactInfo;
-        const contactInfoTextWidth = doc.getTextWidth(contactInfoText);
-        doc.text(contactInfoText, centerX - contactInfoTextWidth / 2, pageHeight - 10);
-
+        if (titleInputs.contactInfo !== "") {
+            const contactInfoText = 'Kontaktinė informacija: ' + titleInputs.contactInfo;
+            const contactInfoTextWidth = doc.getTextWidth(contactInfoText);
+            doc.text(contactInfoText, centerX - contactInfoTextWidth / 2, pageHeight - 10);
+        }
         // Save the PDF
         doc.save('invoice.pdf');
     }
@@ -363,7 +364,7 @@ export default function Generator() {
                         <div className="col-sm-4">
                             <InfoInputs sendDataToParent={handleTitleInputs} id={"serial"}
                                         placeHldr={"Serija XXX Nr. 01"}/>
-                            <InfoInputs sendDataToParent={handleTitleInputs} id={"date"} placeHldr={"Data"}/>
+                            <InfoInputs sendDataToParent={handleTitleInputs} id={"date"} placeHldr={"MMMM-mm-dd"}/>
                         </div>
                     </div>
                     <div className="flex row">
@@ -391,6 +392,13 @@ export default function Generator() {
                         </div>
                     </div>
                 </div>
+                <Button type="button" variant="contained" color="success" style={{marginLeft: "15px", marginBottom: "10px"}}
+                        onClick={addComponent}>
+                    +
+                </Button>
+                <Button variant="contained" color="error" style={{marginBottom: "10px"}} onClick={removeComponent}>
+                    -
+                </Button>
                 <div className="forth-row container">
                     <div className="row">
                         <div className="col-sm-4">
@@ -413,19 +421,12 @@ export default function Generator() {
                 <div className="data-row container">
                     {components}
                 </div>
-                <Button type="button" variant="contained" color="success" style={{marginLeft: "15px"}}
-                        onClick={addComponent}>
-                    +
-                </Button>
-                <Button variant="contained" color="error" onClick={removeComponent}>
-                    -
-                </Button>
                 <div className="name-container container">
                     <div className="name row col-sm-4">
                         <div>
                             <p>Sąskaitą išrašė:</p>
                             <InfoInputs sendDataToParent={handleTitleInputs} id={"issuedBy"}
-                                        placeHldr={"Vardas Vardaitis"}/>
+                                        placeHldr={"Vardas Pavardė"}/>
                         </div>
                     </div>
                 </div>
@@ -438,9 +439,9 @@ export default function Generator() {
                     </div>
                 </div>
                 <div className="container">
-                    <div className="row" style={{justifyContent: "center", marginBottom : "10px"}}>
+                    <div className="row" style={{justifyContent: "center", marginBottom: "10px"}}>
                         <GenerateBtn sendToParentData={generate}/>
-                        <SaveBtn data={data} titleInputs={titleInputs} />
+                        <SaveBtn data={data} titleInputs={titleInputs}/>
                     </div>
                 </div>
             </div>
