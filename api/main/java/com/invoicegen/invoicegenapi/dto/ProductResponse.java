@@ -16,4 +16,5 @@ public class ProductResponse {
     private Float quantity;
     private Float unitPrice;
     private Float vatPercent;
+    private Float vatAmount;
 }

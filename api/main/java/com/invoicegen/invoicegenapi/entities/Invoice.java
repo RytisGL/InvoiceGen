@@ -27,8 +27,6 @@ public class Invoice {
     private LocalDate issueDate;
     @Size(max = 50)
     private String issuedBy;
-    @Size(max = 50)
-    private String contactInfo;
     @ManyToOne()
     @Cascade(CascadeType.PERSIST)
     private Company seller;
@@ -38,6 +36,8 @@ public class Invoice {
     @OneToMany(mappedBy = "invoice")
     @Cascade(CascadeType.ALL)
     private List<Product> products;
+    @ManyToOne()
+    private User user;
     @CreationTimestamp
     private LocalDateTime createdAt;
     @UpdateTimestamp

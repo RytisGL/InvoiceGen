@@ -1,17 +1,20 @@
-import * as React from "react";
 import AnalyticsIcon from '@mui/icons-material/Analytics';
-import { Button, TextField, Collapse } from "@mui/material";
+import {Button, Collapse, TextField} from "@mui/material";
 import InvoiceOutput from "./InvoiceOutput.jsx";
-import InvoiceOutputHeader from "./InvoiceOutputHeader.jsx";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import axios from "axios";
 import SearchIcon from '@mui/icons-material/Search';
-import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import ThreeSixtyIcon from '@mui/icons-material/ThreeSixty';
 import DoneIcon from '@mui/icons-material/Done';
 import ClearIcon from '@mui/icons-material/Clear';
+import GenerateBtn from "./buttons/GenerateBtn.jsx";
+import InvoiceData from "./InvoiceData.jsx";
+import CreateIcon from "@mui/icons-material/Create.js";
+import DescriptionIcon from '@mui/icons-material/Description';
+import Stats from "./Stats.jsx";
+import QuickGenerate from "./QuickGenerate.jsx";
+import Profile from "./Profile.jsx";
+import AccountBoxIcon from '@mui/icons-material/AccountBox';
 
 export default function Dashboard() {
     const [invoiceOutput, setInvoiceOutput] = useState([]);
@@ -20,46 +23,110 @@ export default function Dashboard() {
     const [filterOpen, setFilterOpen] = useState(false);
     const [filters, setFilters] = useState({
         dateFrom: "",
-        buyer: "",
-        seller: "",
+        buyer: ""
     });
-
     const [checkedInvoices, setCheckedInvoices] = useState([]);
+    const [orderBy, setOrderBy] = useState("id");
+    const [direction, setDirection] = useState("DESC");
+    const [checkedInvoiceData, setCheckedInvoiceData] = useState([]);
+    const [activeComponent, setActiveComponent] = useState("InvoiceData");
+    const [areButtonsExpanded, setAreButtonsExpanded] = useState(true);
 
-    const handleCheckChange = (id, isChecked) => {
+    const handleCheckChange = async (id, isChecked) => {
+
         setCheckedInvoices((prevState) => {
-            if (isChecked) {
-                return [...prevState, id];
-            } else {
-                return prevState.filter((invoiceId) => invoiceId !== id);
-            }
+            const updatedInvoices = isChecked
+                ? [...prevState, id]
+                : prevState.filter((invoiceId) => invoiceId !== id);
+
+            // Now update checkedInvoiceData based on the new checkedInvoices
+            updateCheckedInvoiceData(updatedInvoices, isChecked, id);
+
+            return updatedInvoices;
         });
     };
 
+    const updateCheckedInvoiceData = async (updatedInvoices, isChecked, id) => {
+        const jwtToken = localStorage.getItem('jwtToken');
+
+        if (isChecked) {
+            try {
+                const response = await axios.get(`http://localhost:8080/api/v1/invoice/${id}`, {
+                    headers: {
+                        Authorization: `Bearer ${jwtToken}`
+                    }
+                });
+                const invoice = response.data;
+
+                const products = invoice.products.map((product) => ({
+                    key: product.id,
+                    field1: product.name,
+                    field2: product.unitOfMeasure,
+                    field3: product.quantity,
+                    field4: product.unitPrice,
+                    field5: product.vatPercent,
+                }));
+
+                const result = {
+                    id: invoice.id,
+                    productDataObj: products,
+                    infoInputsObj: {
+                        serial: invoice.serial,
+                        issueDate: invoice.issueDate,
+                        sellerName: invoice.seller.name,
+                        sellerAddress: invoice.seller.address,
+                        sellerCmpnyCode: invoice.seller.companyCode,
+                        sellerTaxCode: invoice.seller.companyVATCode,
+                        buyerName: invoice.buyer.name,
+                        buyerAddress: invoice.buyer.address,
+                        buyerCmpnyCode: invoice.buyer.companyCode,
+                        buyerTaxCode: invoice.buyer.companyVATCode,
+                        issuedBy: invoice.issuedBy,
+                        contactInfo: invoice.contactInfo,
+                    },
+                };
+
+                setCheckedInvoiceData((prevData) => [...prevData, result]);
+            } catch (error) {
+                console.error("Error fetching invoice data:", error);
+            }
+        } else {
+            setCheckedInvoiceData((prevData) =>
+                prevData.filter((data) => data.id !== id)
+            );
+        }
+    };
+
     useEffect(() => {
-        console.log("Updated checked invoices:", checkedInvoices);
     }, [checkedInvoices]);
 
-    const fetchInvoiceData = async (pageNumber, filters) => {
+    const fetchInvoiceData = async (pageNumber, filters, orderBy, direction) => {
+        const jwtToken = localStorage.getItem('jwtToken');
+
         try {
-            // Construct query parameters based on filters
-            const { dateFrom, buyer, seller } = filters;
+            const {dateFrom, buyer, seller} = filters;
             const queryParams = new URLSearchParams({
                 page: pageNumber,
-                ...(dateFrom && { dateFrom }),
-                ...(buyer && { buyer }),
-                ...(seller && { seller }),
+                orderBy,
+                direction,
+                ...(dateFrom && {dateFrom}),
+                ...(buyer && {buyer}),
+                ...(seller && {seller}),
             });
 
             const response = await axios.get(
-                `http://localhost:8080/api/v1/invoice/preview?${queryParams.toString()}`
+                `http://localhost:8080/api/v1/invoice/preview?${queryParams.toString()}`, {
+                    headers: {
+                        Authorization: `Bearer ${jwtToken}`
+                    }
+                }
             );
 
             console.log("Invoice data fetched successfully:", response.data);
 
             const invoices = response.data.content;
             const invoiceComponents = invoices.map((invoice) => (
-                <InvoiceOutput key={invoice.id} onCheckChange={handleCheckChange} invoice={invoice} />
+                <InvoiceOutput key={invoice.id} onCheckChange={handleCheckChange} invoice={invoice}/>
             ));
 
             setInvoiceOutput(invoiceComponents);
@@ -70,9 +137,13 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
-        // Fetch initial data without filters
-        fetchInvoiceData(page, filters);
-    }, [page]); // Fetch data whenever the page changes
+        setCheckedInvoices([]);
+        setCheckedInvoiceData([]);
+    }, [activeComponent]);
+
+    useEffect(() => {
+        fetchInvoiceData(page, filters, orderBy, direction);
+    }, [page, orderBy, direction, activeComponent]);
 
     const handleNextPage = () => {
         if (page < totalPages - 1) {
@@ -87,7 +158,7 @@ export default function Dashboard() {
     };
 
     const handleFilterChange = (e) => {
-        setFilters({ ...filters, [e.target.name]: e.target.value });
+        setFilters({...filters, [e.target.name]: e.target.value});
     };
 
     const handleFilterButtonClick = () => {
@@ -95,18 +166,95 @@ export default function Dashboard() {
     };
 
     const applyFilters = () => {
-        setPage(0); // Reset to the first page when applying new filters
-        fetchInvoiceData(0, filters); // Fetch data with the current filters when the button is clicked
+        setPage(0);
+        fetchInvoiceData(0, filters, orderBy, direction);
     };
 
     const clearFilters = () => {
         setFilters({
             dateFrom: "",
-            buyer: "",
-            seller: "",
+            buyer: ""
         });
-        setPage(0); // Reset to the first page when clearing filters
-        fetchInvoiceData(0, { dateFrom: "", buyer: "", seller: "" }); // Fetch data with no filters
+        setPage(0);
+        fetchInvoiceData(0, {dateFrom: "", buyer: "", seller: ""}, orderBy, direction);
+    };
+
+    const handleSortChange = (newOrderBy) => {
+        if (newOrderBy === orderBy) {
+            setDirection((prevDirection) => (prevDirection === "ASC" ? "DESC" : "ASC"));
+        } else {
+            setOrderBy(newOrderBy);
+            setDirection("DESC");
+        }
+        setPage(0);
+    };
+
+    const handleDeleteInvoices = async () => {
+        const jwtToken = localStorage.getItem('jwtToken');
+
+        if (checkedInvoices.length === 0) {
+            return;
+        }
+
+        const ids = checkedInvoices.join(",");
+        console.log(ids);
+
+        try {
+            await axios.delete(`http://localhost:8080/api/v1/invoice`, {
+                params: {ids},
+                headers: {
+                    Authorization: `Bearer ${jwtToken}`
+                }
+            });
+            setCheckedInvoices([]);
+            fetchInvoiceData(page, filters, orderBy, direction);
+        } catch (error) {
+            console.error("Error deleting invoices:", error);
+        }
+    };
+
+    // Function to determine which component to render
+    const renderActiveComponent = () => {
+        switch (activeComponent) {
+            case "Stats":
+                return <Stats/>;
+            case "QuickGenerate":
+                return <QuickGenerate/>;
+            case "Profile":
+                return <Profile/>;
+            case "InvoiceData":
+            default:
+                return (
+                    <InvoiceData
+                        invoiceOutput={invoiceOutput}
+                        page={page}
+                        totalPages={totalPages}
+                        orderBy={orderBy}
+                        direction={direction}
+                        handleSortChange={handleSortChange}
+                        handlePreviousPage={handlePreviousPage}
+                        handleNextPage={handleNextPage}
+                    />
+                );
+        }
+    };
+
+    // Toggle buttons collapse/expand
+    const handleComponentChange = (component) => {
+        setActiveComponent(component);
+        setAreButtonsExpanded(component === "InvoiceData"); // Collapse buttons unless it's the "InvoiceData" component
+    };
+
+    // Dynamic button style
+    const getButtonStyle = (component) => {
+        return {
+            marginTop: "10px",
+            background: activeComponent === component ? "#005f99" : "#6482AD", // Highlight active button
+            justifyContent: "flex-start",
+            display: "flex",
+            alignItems: "center",
+            paddingLeft: "12px"
+        };
     };
 
     return (
@@ -115,151 +263,163 @@ export default function Dashboard() {
                 <div className="dashboard container col-sm-2">
                     <Button
                         component="label"
-                        className="col-sm-10"
-                        style={{
-                            margin: "10px",
-                            background: "#6482AD",
-                            justifyContent: "flex-start",
-                            display: "flex",
-                            alignItems: "center",
-                            paddingLeft: "12px"
-                        }}
+                        className="col-sm-11"
+                        style={getButtonStyle("InvoiceData")}
                         variant="contained"
                         tabIndex={-1}
-                        startIcon={<SearchIcon />}
+                        startIcon={<DescriptionIcon/>}
                         type="button"
-                        onClick={handleFilterButtonClick} // Toggle filter visibility
+                        onClick={() => handleComponentChange("InvoiceData")}
                     >
-                        Filtrai
+                        Sąskaitos
                     </Button>
-                    <Collapse in={filterOpen}>
-                        <div >
-                            <TextField
-                                label="Nuo datos"
-                                name="dateFrom"
-                                type="date"
-                                value={filters.dateFrom}
-                                onChange={handleFilterChange}
-                                fullWidth
-                                margin="dense"
-                                InputLabelProps={{
-                                    shrink: true,
-                                }}
-                            />
-                            <TextField
-                                label="Pardavėjas"
-                                name="seller"
-                                value={filters.seller}
-                                onChange={handleFilterChange}
-                                fullWidth
-                                margin="dense"
-                            />
-                            <TextField
-                                label="Pirkėjas"
-                                name="buyer"
-                                value={filters.buyer}
-                                onChange={handleFilterChange}
-                                fullWidth
-                                margin="dense"
-                            />
-                            <Button
-                                type="button"
-                                color="success"
-                                onClick={applyFilters} // Apply filters and rerender components
-                                variant="contained"
-                                startIcon={<DoneIcon />}
-                                fullWidth
-                            >
-                                Filtruoti
-                            </Button>
-                            <Button
-                                type="button"
-                                color="secondary"
-                                onClick={clearFilters} // Clear filters and rerender components
-                                variant="contained"
-                                fullWidth
-                                startIcon={<ClearIcon/>}
-                                style={{ marginTop: "10px" }}
-                            >
-                                Išvalyti
-                            </Button>
-                        </div>
+                    <Collapse in={areButtonsExpanded}>
+                        <Button
+                            size="small"
+                            component="label"
+                            className="col-sm-10"
+                            style={getButtonStyle("Filters")}
+                            variant="contained"
+                            tabIndex={-1}
+                            startIcon={<SearchIcon/>}
+                            type="button"
+                            onClick={handleFilterButtonClick}
+                        >
+                            Filtrai
+                        </Button>
+                        <Collapse in={filterOpen}>
+                            <div>
+                                <TextField
+                                    size="small"
+                                    label="Nuo datos"
+                                    name="dateFrom"
+                                    type="date"
+                                    value={filters.dateFrom}
+                                    onChange={handleFilterChange}
+                                    fullWidth
+                                    margin="dense"
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                />
+                                <TextField
+                                    size="small"
+                                    label="Pirkėjas"
+                                    name="buyer"
+                                    value={filters.buyer}
+                                    onChange={handleFilterChange}
+                                    fullWidth
+                                    margin="dense"
+                                />
+                                <Button
+                                    className="col-sm-9"
+                                    size="small"
+                                    style={{
+                                        marginTop: "10px",
+                                        background: "green",
+                                        justifyContent: "flex-start",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        paddingLeft: "12px"
+                                    }}
+                                    onClick={applyFilters}
+                                    variant="contained"
+                                    tabIndex={-1}
+                                    startIcon={<DoneIcon/>}
+                                    type="button"
+                                >
+                                    Taikyti
+                                </Button>
+                                <Button
+                                    className="col-sm-9"
+                                    size="small"
+                                    style={{
+                                        marginTop: "10px",
+                                        background: "dimgrey",
+                                        justifyContent: "flex-start",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        paddingLeft: "12px"
+                                    }}
+                                    onClick={clearFilters}
+                                    variant="contained"
+                                    tabIndex={-1}
+                                    startIcon={<ClearIcon/>}
+                                    type="button"
+                                >
+                                    Valyti
+                                </Button>
+                            </div>
+                        </Collapse>
+                        <Button
+                            size="small"
+                            className="col-sm-10"
+                            style={getButtonStyle("Delete")}
+                            variant="contained"
+                            tabIndex={-1}
+                            startIcon={<DeleteForeverIcon/>}
+                            type="button"
+                            onClick={handleDeleteInvoices}
+                        >
+                            Ištrinti
+                        </Button>
+                        <GenerateBtn
+                            size="small"
+                            className={"col-sm-10"}
+                            component="label"
+                            fieldInputsArray={checkedInvoiceData}
+                            style={{
+                                marginTop: "10px",
+                                background: "#6482AD",
+                                justifyContent: "flex-start",
+                                display: "flex",
+                                alignItems: "center",
+                                paddingLeft: "12px"
+                            }}
+                            type="button"
+                        />
                     </Collapse>
                     <Button
                         component="label"
-                        className="col-sm-10"
-                        style={{
-                            margin: "10px",
-                            background: "#6482AD",
-                            justifyContent: "flex-start",
-                            display: "flex",
-                            alignItems: "center",
-                            paddingLeft: "12px"
-                        }}
+                        className="col-sm-11"
+                        style={getButtonStyle("Stats")}
                         variant="contained"
                         tabIndex={-1}
-                        startIcon={<DeleteForeverIcon />}
+                        startIcon={<AnalyticsIcon/>}
                         type="button"
+                        onClick={() => handleComponentChange("Stats")}
                     >
-                        IŠTRINTI
+                        Statistika
                     </Button>
                     <Button
                         component="label"
-                        className="col-sm-10"
-                        style={{
-                            margin: "10px",
-                            background: "#6482AD",
-                            justifyContent: "flex-start",
-                            display: "flex",
-                            alignItems: "center",
-                            paddingLeft: "12px"
-                        }}
+                        className="col-sm-11"
+                        style={getButtonStyle("QuickGenerate")}
                         variant="contained"
                         tabIndex={-1}
-                        startIcon={<ThreeSixtyIcon />}
+                        startIcon={<CreateIcon/>}
                         type="button"
+                        onClick={() => handleComponentChange("QuickGenerate")}
                     >
-                        GENERUOTI
+                        Nauja 🗏
                     </Button>
                     <Button
                         component="label"
-                        className="col-sm-10"
-                        style={{
-                            margin: "10px",
-                            background: "#6482AD",
-                            justifyContent: "flex-start",
-                            display: "flex",
-                            alignItems: "center",
-                            paddingLeft: "12px"
-                        }}
+                        className="col-sm-11"
+                        style={getButtonStyle("Profile")}
                         variant="contained"
                         tabIndex={-1}
-                        startIcon={<AnalyticsIcon />}
+                        startIcon={<AccountBoxIcon/>}
                         type="button"
+                        onClick={() => handleComponentChange("Profile")} // Switches to the Profile component
                     >
-                        STATISTIKA
+                        Profilis
                     </Button>
                 </div>
-                <div className="dashboard field container col-sm-10" style={{ background: "white" }}>
-                    <InvoiceOutputHeader />
-                    {invoiceOutput}
-                    <div className="row" style={{
-                        position: "absolute",
-                        bottom: 15,
-                        left: 0,
-                        right: 0,
-                        justifyContent: "center",
-                        display: "flex"
-                    }}>
-                        <Button startIcon={<KeyboardArrowLeftIcon />} variant="contained" style={{ background: "#6482AD" }}
-                                onClick={handlePreviousPage} disabled={page === 0} />
-                        {page + 1} iš {totalPages}
-                        <Button startIcon={<KeyboardArrowRightIcon />} variant="contained"
-                                style={{ background: "#6482AD" }} onClick={handleNextPage}
-                                disabled={page === totalPages - 1} />
-                    </div>
+                <div className="dashboard field container col-sm-10" style={{background: "white"}}>
+                    {renderActiveComponent()}
                 </div>
             </div>
         </div>
-    )
+    );
 }

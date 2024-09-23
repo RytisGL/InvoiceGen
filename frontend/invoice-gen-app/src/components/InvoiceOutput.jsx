@@ -1,10 +1,10 @@
-import { Button } from "@mui/material";
+import {Button} from "@mui/material";
 import * as React from "react";
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 
-export default function InvoiceOutput({ invoice, onCheckChange }) {
-    const { serial, companyName, issueDate, sum, id } = invoice;
+export default function InvoiceOutput({invoice, onCheckChange}) {
+    const {serial, sellerName, issueDate, sum, id} = invoice;
 
     const [isChecked, setIsChecked] = React.useState(false);
     const [isExpanded, setIsExpanded] = React.useState(false);
@@ -18,10 +18,15 @@ export default function InvoiceOutput({ invoice, onCheckChange }) {
     };
 
     const handleExpandToggle = async () => {
+        const jwtToken = localStorage.getItem('jwtToken');
+
         if (!isExpanded) {
-            // Fetch full invoice data when expanding
             try {
-                const response = await fetch(`http://localhost:8080/api/v1/invoice/${id}`);
+                const response = await fetch(`http://localhost:8080/api/v1/invoice/${id}`, {
+                    headers: {
+                        Authorization: `Bearer ${jwtToken}`
+                    }
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setInvoiceDetails(data);
@@ -40,53 +45,79 @@ export default function InvoiceOutput({ invoice, onCheckChange }) {
             <Button
                 component="label"
                 className="col-sm-12"
-                style={{ background: "white", justifyContent: "flex-start", textAlign: "left", color: "black" }}
+                style={{background: "white", color: "black", textTransform: "none"}}
                 variant="outlined"
                 tabIndex={-1}
                 type="button"
-                onClick={handleExpandToggle}  // Click handler for expanding the details
+                onClick={handleExpandToggle}
             >
                 <div className="d-flex w-100">
                     {isChecked ? (
-                        <CheckBoxIcon onClick={handleCheckToggle} /> // Checkbox icon with click handler
+                        <CheckBoxIcon className="col-1" onClick={handleCheckToggle} style={{marginRight: "10px"}}/>
                     ) : (
-                        <CheckBoxOutlineBlankIcon onClick={handleCheckToggle} /> // Blank checkbox icon with click handler
+                        <CheckBoxOutlineBlankIcon className="col-1" onClick={handleCheckToggle}
+                                                  style={{marginRight: "10px"}}/>
                     )}
-                    <div className="col-2">{serial}</div>
-                    <div className="col-4">{companyName}</div>
-                    <div className="col-3">{issueDate}</div>
-                    <div className="col-2">{sum}€</div>
+                    <div className="col-2" style={{textAlign: "left"}}>{serial}</div>
+                    <div className="col-4" style={{textAlign: "left"}}>{sellerName}</div>
+                    <div className="col-3" style={{textAlign: "left"}}>{issueDate}</div>
+                    <div className="col-2" style={{textAlign: "left"}}>{sum}€</div>
                 </div>
             </Button>
             {isExpanded && invoiceDetails && (
-                <div style={{ marginTop: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}>
-                    <h4>Invoice Details</h4>
-                    {/* Display Seller Information */}
+                <div style={{marginTop: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '4px'}}>
+                    <h4>Saskaitos detalės</h4>
                     <p>
-                        <strong>Seller:</strong> {invoiceDetails.seller.name}, {invoiceDetails.seller.address},
-                        Company Code: {invoiceDetails.seller.companyCode}, VAT Code: {invoiceDetails.seller.companyVATCode}
+                        <strong>Pardavėjas:</strong> {invoiceDetails.seller.name}, {invoiceDetails.seller.address},
+                        Įm. kodas: {invoiceDetails.seller.companyCode}, PVM mokėtojo
+                        kodas: {invoiceDetails.seller.companyVATCode}
                     </p>
-                    {/* Display Buyer Information */}
                     <p>
-                        <strong>Buyer:</strong> {invoiceDetails.buyer.name}, {invoiceDetails.buyer.address},
-                        Company Code: {invoiceDetails.buyer.companyCode}, VAT Code: {invoiceDetails.buyer.companyVATCode}
+                        <strong>Pirkėjas:</strong> {invoiceDetails.buyer.name}, {invoiceDetails.buyer.address},
+                        Įm. kodas: {invoiceDetails.buyer.companyCode}, PVM mokėtojo
+                        kodas: {invoiceDetails.buyer.companyVATCode}
                     </p>
-                    <p><strong>Issued By:</strong> {invoiceDetails.issuedBy}</p>
+                    <p><strong>Išrašė:</strong> {invoiceDetails.issuedBy}</p>
 
-                    <h5>Products</h5>
-                    <ul>
+                    <table style={{width: '100%', borderCollapse: 'collapse', marginTop: '10px'}}>
+                        <thead>
+                        <tr>
+                            <th style={{border: '1px solid #ddd', padding: '8px'}}>Pavadinimas</th>
+                            <th style={{border: '1px solid #ddd', padding: '8px'}}>Mat. vnt</th>
+                            <th style={{border: '1px solid #ddd', padding: '8px'}}>Kiekis</th>
+                            <th style={{border: '1px solid #ddd', padding: '8px'}}>Kaina (€)</th>
+                            <th style={{border: '1px solid #ddd', padding: '8px'}}>PVM (%)</th>
+                            <th style={{border: '1px solid #ddd', padding: '8px'}}>PVM suma (€)</th>
+                            <th style={{border: '1px solid #ddd', padding: '8px'}}>Suma (€)</th>
+                        </tr>
+                        </thead>
+                        <tbody>
                         {invoiceDetails.products.map((product, index) => {
-                            const totalSum = product.quantity * product.unitPrice + product.quantity * product.unitPrice * (product.vatPercent / 100);
+                            const totalSum = product.quantity * product.unitPrice + product.vatAmount;
                             return (
-                                <li key={index}>
-                                    <strong>Name:</strong> {product.name}, <strong>Unit of Measure:</strong> {product.unitOfMeasure}, <strong>Quantity:</strong> {product.quantity},
-                                    <strong> Unit Price:</strong> {product.unitPrice}€, <strong>VAT Percent:</strong> {product.vatPercent}%, <strong>Total Sum:</strong> {totalSum.toFixed(2)}€
-                                </li>
+                                <tr key={index}>
+                                    <td style={{border: '1px solid #ddd', padding: '8px'}}>{product.name}</td>
+                                    <td style={{border: '1px solid #ddd', padding: '8px'}}>{product.unitOfMeasure}</td>
+                                    <td style={{border: '1px solid #ddd', padding: '8px'}}>{product.quantity}</td>
+                                    <td style={{
+                                        border: '1px solid #ddd',
+                                        padding: '8px'
+                                    }}>{product.unitPrice.toFixed(2)}</td>
+                                    <td style={{border: '1px solid #ddd', padding: '8px'}}>{product.vatPercent}</td>
+                                    <td style={{
+                                        border: '1px solid #ddd',
+                                        padding: '8px'
+                                    }}>{product.vatAmount.toFixed(2)}</td>
+                                    <td style={{border: '1px solid #ddd', padding: '8px'}}>{totalSum.toFixed(2)}</td>
+                                </tr>
                             );
                         })}
-                    </ul>
+                        </tbody>
+                    </table>
+
                     <p>
-                        <strong>Total Invoice Sum:</strong> {invoiceDetails.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice + product.quantity * product.unitPrice * (product.vatPercent / 100)), 0).toFixed(2)}€
+                        <strong>Totali
+                            suma:</strong> {invoiceDetails.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice + product.quantity * product.unitPrice * (product.vatPercent / 100)), 0).toFixed(2)}€
                     </p>
                 </div>
             )}
