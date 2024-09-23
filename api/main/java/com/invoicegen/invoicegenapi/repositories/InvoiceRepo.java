@@ -1,16 +1,18 @@
 package com.invoicegen.invoicegenapi.repositories;
 
 import com.invoicegen.invoicegenapi.entities.Invoice;
-import org.springframework.data.domain.Example;
+import com.invoicegen.invoicegenapi.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.domain.*;
 
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Repository
 public interface InvoiceRepo extends JpaRepository<Invoice, Long> {
-    Page<Invoice> findAllByIssueDateAfter(LocalDate issueDate, Example<Invoice> example, Pageable pageable);
-    Page<Invoice> findByIssueDateAfter(LocalDate date, Pageable pageable);
+    List<Invoice> findByIdInAndUser(List<Long> ids, User user);
+    Invoice findByIdAndUser(Long id, User user);
+    List<Invoice> findByUser(User user);
+    List<Invoice> findByIssueDateIsBetweenAndUser(LocalDate from, LocalDate to, User user);
 }

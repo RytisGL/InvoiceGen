@@ -1,5 +1,5 @@
 import React, {useState, useRef} from 'react';
-import Placeholder from '../assets/PlaceHolder.png';
+import Placeholder from '../../assets/PlaceHolder.png';
 import {Button, styled} from "@mui/material";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 

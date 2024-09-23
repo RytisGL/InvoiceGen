@@ -1,5 +1,6 @@
 package com.invoicegen.invoicegenapi.conveters;
 
+import com.invoicegen.invoicegenapi.Utils;
 import com.invoicegen.invoicegenapi.dto.*;
 import com.invoicegen.invoicegenapi.entities.Company;
 import com.invoicegen.invoicegenapi.entities.Invoice;
@@ -68,6 +69,7 @@ public abstract class Converter {
                 .name(product.getName())
                 .unitPrice(product.getUnitPrice())
                 .quantity(product.getQuantity())
+                .vatAmount(Utils.countVatAmount(product))
                 .build();
     }
 
@@ -88,25 +90,19 @@ public abstract class Converter {
         invoiceResponse.setProducts(productListToProductResponse(invoice.getProducts()));
         invoiceResponse.setIssueDate(invoice.getIssueDate());
         invoiceResponse.setIssuedBy(invoice.getIssuedBy());
-        invoiceResponse.setContactInfo(invoice.getContactInfo());
+        invoiceResponse.setUserInfo(invoice.getUser().getInfo());
         invoiceResponse.setCreatedAt(invoice.getCreatedAt());
         invoiceResponse.setUpdatedAt(invoice.getUpdatedAt());
         return invoiceResponse;
     }
 
     public static InvoicePreviewResponse invoicePreviewToInvoicePreviewResponse(Invoice invoice) {
-        Float sum = 0f;
-        for (Product product : invoice.getProducts()) {
-            Float total = product.getQuantity() * product.getUnitPrice();
-            Float vatAmount = total * (product.getVatPercent() / 100);
-            sum += total + vatAmount;
-        }
         return InvoicePreviewResponse.builder()
                 .serial(invoice.getSerial())
                 .id(invoice.getId())
                 .issueDate(invoice.getIssueDate())
-                .sum(sum)
-                .companyName(invoice.getSeller().getName())
+                .sum(Utils.countTotalSum(invoice))
+                .sellerName(invoice.getBuyer().getName())
                 .build();
     }
 }

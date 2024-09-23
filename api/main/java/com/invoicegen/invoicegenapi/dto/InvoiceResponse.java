@@ -22,6 +22,7 @@ public class InvoiceResponse {
     private CompanyResponse seller;
     private CompanyResponse buyer;
     private List<ProductResponse> products;
+    private String userInfo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
