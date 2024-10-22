@@ -1,15 +1,15 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, {useState, useContext, useEffect} from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Container, Alert, Box } from '@mui/material';
-import { AuthContext } from '../context/AuthContext.jsx';
+import {useNavigate} from 'react-router-dom';
+import {TextField, Button, Container, Alert, Box} from '@mui/material';
+import {AuthContext} from '../context/AuthContext.jsx';
 
 const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [generalError, setGeneralError] = useState('');
-    const { isAuthenticated, login } = useContext(AuthContext);
+    const {isAuthenticated, login} = useContext(AuthContext);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -29,17 +29,28 @@ const Register = () => {
         }
 
         try {
+            const requestSentTime = Date.now();
             const response = await axios.post('http://localhost:8081/api/v1/user/register', {
-                email,
-                password,
-            });
+                    email,
+                    password,
+                },
+                {
+                    withCredentials: true,
+                }
+            );
 
-            // Login after successful registration
-            login(response.data.jwtToken, response.data.refreshToken);
-            navigate('/valdymas'); // Redirect after registration
+            const {jwtToken, expiresIn} = response.data;
+
+            // Calculate expiration time
+            const requestReceivedTime = Date.now(); // Time when response is received
+            const elapsedTime = requestReceivedTime - requestSentTime; // Time taken to send/receive request
+            const expirationTime = new Date(requestReceivedTime + expiresIn - elapsedTime); // Translate to DateTime
+
+            login(jwtToken, expirationTime);
+            navigate('/valdymas');
         } catch (error) {
             if (error.response && error.response.data) {
-                const { message, errors } = error.response.data;
+                const {message, errors} = error.response.data;
 
                 // Set the general error message if provided
                 if (message) {
@@ -62,7 +73,7 @@ const Register = () => {
 
     return (
         <Container maxWidth="sm" className="mt-5">
-            <Box className="shadow p-4 rounded" style={{ background: "white" }}>
+            <Box className="shadow p-4 rounded" style={{background: "white"}}>
                 <h2 className="mb-4 text-center">Register</h2>
                 {generalError && <Alert severity="error" className="mb-3">{generalError}</Alert>}
                 <form onSubmit={handleRegister}>
@@ -99,7 +110,7 @@ const Register = () => {
                     <Button
                         type="submit"
                         variant="contained"
-                        style={{ background: "#6482AD" }}
+                        style={{background: "#6482AD"}}
                         className="w-100 mt-3"
                     >
                         Register

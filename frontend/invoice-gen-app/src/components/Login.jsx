@@ -22,12 +22,28 @@ const Login = () => {
         setGeneralError('');
 
         try {
-            const response = await axios.post('http://localhost:8081/api/v1/user/login', {
-                email,
-                password,
-            });
+            const requestSentTime = Date.now(); // Time when request is sent
 
-            login(response.data.jwtToken, response.data.refreshToken);
+            const response = await axios.post(
+                'http://localhost:8081/api/v1/user/login',
+                {
+                    email,
+                    password,
+                },
+                {
+                    withCredentials: true,
+                }
+            );
+
+            const { jwtToken, expiresIn } = response.data;
+
+            const requestReceivedTime = Date.now();
+            const elapsedTime = requestReceivedTime - requestSentTime;
+
+            const safeExpirationTime = Math.max(0, expiresIn - elapsedTime);
+            const expirationTime = new Date(requestReceivedTime + safeExpirationTime);
+            login(jwtToken, expirationTime);
+
             navigate('/valdymas');
         } catch (error) {
             if (error.response && error.response.data) {

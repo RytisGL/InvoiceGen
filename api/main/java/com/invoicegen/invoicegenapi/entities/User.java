@@ -23,4 +23,10 @@ public class User {
     @OneToMany(mappedBy = "user")
     @Cascade(value = CascadeType.ALL)
     private List<Invoice> invoices;
+    @OneToOne
+    @Cascade(value = CascadeType.ALL)
+    private Company company;
+    @OneToOne
+    @Cascade(value = CascadeType.ALL)
+    private Logo logo;
 }

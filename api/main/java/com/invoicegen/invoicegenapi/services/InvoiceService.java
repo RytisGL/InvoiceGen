@@ -9,6 +9,7 @@ import com.invoicegen.invoicegenapi.entities.Product;
 import com.invoicegen.invoicegenapi.entities.User;
 import com.invoicegen.invoicegenapi.repositories.CompanyRepo;
 import com.invoicegen.invoicegenapi.repositories.InvoiceRepo;
+import com.invoicegen.invoicegenapi.repositories.ProductRepo;
 import com.invoicegen.invoicegenapi.repositories.UserRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,28 +25,40 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class InvoiceService {
 
+    private final ProductRepo productRepo;
     private final InvoiceRepo invoiceRepo;
     private final CompanyRepo companyRepo;
     private final UserRepo userRepo;
 
     public String saveInvoice(InvoiceRequest invoiceRequest) {
+
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> userOptional = userRepo.findById(userEmail);
 
         User user = userOptional.orElseGet(() -> User.builder().email(userEmail).build());
 
+        if (userOptional.isEmpty()) {
+            userRepo.save(user);
+        }
+
+        if (user.getCompany() == null) {
+            throw new NoSuchElementException("Company not found");
+        }
+
         Invoice invoice = Converter.invoiceRequestToInvoice(invoiceRequest);
+        invoice.setSeller(user.getCompany());
 
         replaceDuplicateCompanies(invoice);
         invoice.setUser(user);
 
         this.invoiceRepo.saveAndFlush(invoice);
+
         return "Invoice saved";
     }
 
     public List<InvoiceResponse> getInvoices(List<Long> ids) {
-        User user = getUserFromSecurityContext();
-        return invoiceRepo.findByIdInAndUser(ids, user).stream().map(Converter::invoiceToInvoiceResponse).collect(Collectors.toList());
+        User user = Utils.getUserFromSecurityContext();
+        return invoiceRepo.findByIdInAndUser(ids, user).stream().map(Converter::invoiceToInvoiceResponse).toList();
     }
 
     public Page<InvoicePreviewResponse> getInvoicesPreview(
@@ -55,21 +68,25 @@ public class InvoiceService {
             String direction,
             String buyer,
             LocalDate dateFrom) {
-
         Sort.Direction sortDirection = (direction != null && !direction.isEmpty()) ?
                 Sort.Direction.fromString(direction) : Sort.Direction.ASC;
 
-        User user = getUserFromSecurityContext();
+        User user = Utils.getUserFromSecurityContext();
 
         List<Invoice> invoices;
-        Invoice filter = getInvoice(buyer);
-        filter.setUser(user);
 
-        Example<Invoice> example = Example.of(filter);
-        invoices = invoiceRepo.findAll(example);
+        if (buyer != null && dateFrom != null) {
+            invoices = invoiceRepo.findByUserAndBuyer_NameContainingIgnoreCaseAndIssueDateAfter(user, buyer, dateFrom);
+        } else if (buyer != null) {
+            invoices = invoiceRepo.findByUserAndBuyer_NameContainingIgnoreCase(user, buyer);
+        } else if (dateFrom != null) {
+            invoices = invoiceRepo.findByUserAndIssueDateAfter(user, dateFrom);
+        } else {
+            invoices = invoiceRepo.findByUser(user);
+        }
 
         List<InvoicePreviewResponse> invoiceDTOs = invoices.stream()
-                .map(Converter::invoicePreviewToInvoicePreviewResponse)
+                .map(Converter::invoiceToInvoicePreviewResponse)
                 .collect(Collectors.toList());
 
         if (dateFrom != null) {
@@ -88,7 +105,7 @@ public class InvoiceService {
     }
 
     public InvoiceResponse getInvoicesById(Long id) {
-        Invoice invoice = invoiceRepo.findByIdAndUser(id, getUserFromSecurityContext());
+        Invoice invoice = invoiceRepo.findByIdAndUser(id, Utils.getUserFromSecurityContext());
         if (invoice != null) {
             return Converter.invoiceToInvoiceResponse(invoice);
         }
@@ -97,7 +114,7 @@ public class InvoiceService {
 
     @Transactional
     public String deleteInvoiceById(List<Long> ids) {
-        List<Invoice> invoices = invoiceRepo.findByIdInAndUser(ids, getUserFromSecurityContext());
+        List<Invoice> invoices = invoiceRepo.findByIdInAndUser(ids, Utils.getUserFromSecurityContext());
 
         Set<Long> companiesIdsToDelete = new HashSet<>();
         if (invoices.isEmpty()) {
@@ -105,7 +122,7 @@ public class InvoiceService {
         }
         //Checks if companies have any other invoices connected, if not adds to the list to be deleted, deletes invoice.
         for (Invoice invoice : invoices) {
-            deleteCompanyIfNoAdditionalInvoices(invoice.getBuyer(), invoice.getSeller(), companiesIdsToDelete);
+            Utils.deleteCompanyIfNoAdditionalInvoices(invoice.getBuyer(), invoice.getSeller(), companiesIdsToDelete);
             invoiceRepo.delete(invoice);
         }
         //Deletes companies that has no attached invoices.
@@ -114,92 +131,70 @@ public class InvoiceService {
         return "Deleted";
     }
 
-    public StatsResponse getStats(LocalDate startDate, LocalDate endDate) {
-        HashMap<String, Float> sellers = new HashMap<>();
-        HashMap<String, Float> buyers = new HashMap<>();
-        Float vatAmount = 0f;
-        Float total = 0f;
-        String highestBuyer = "";
-        String highestSeller = "";
-        Float highestInvoiceSum = 0f;
-        List<Invoice> invoices;
-        if (startDate != null && endDate != null) {
-            invoices = invoiceRepo.findByIssueDateIsBetweenAndUser(startDate, endDate, getUserFromSecurityContext());
-        } else {
-            invoices = invoiceRepo.findByUser(getUserFromSecurityContext());
+    public NextSerialResponse getNextSerial() {
+        User user = userRepo.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName());
+        Invoice invoice = this.invoiceRepo.findFirstByUserOrderByCreatedAtDesc(user);
+        if (invoice == null) {
+            return NextSerialResponse.builder()
+                    .serial("")
+                    .build();
         }
-        for (Invoice invoice : invoices) {
-            Float sum = Utils.countTotalSum(invoice);
-            if (sum > highestInvoiceSum) {
-                highestInvoiceSum = sum;
-                highestBuyer = invoice.getBuyer().getName();
-                highestSeller = invoice.getSeller().getName();
-            }
-            if (!sellers.containsKey(invoice.getSeller().getName())) {
-                sellers.put(invoice.getSeller().getName(), 0f);
-            }
-            if (!buyers.containsKey(invoice.getBuyer().getName())) {
-                buyers.put(invoice.getBuyer().getName(), 0f);
-            }
-            sellers.put(invoice.getSeller().getName(),
-                    sellers.get(invoice.getSeller().getName()) + sum);
-            buyers.put(invoice.getBuyer().getName(),
-                    buyers.get(invoice.getBuyer().getName()) + sum);
-            total += Utils.countTotalSum(invoice);
-            for (Product product : invoice.getProducts()) {
-                vatAmount += Utils.countVatAmount(product);
+        String serial = invoice.getSerial();
+        String nonDigit = "";
+        long digit = 0;
+        for (int i = 0; i < serial.length(); i++) {
+            if (Character.isDigit(serial.charAt(i))) {
+                digit = Long.parseLong(serial.substring(i));
+                break;
+            } else {
+                nonDigit = serial.substring(0, i + 1);
             }
         }
-        return StatsResponse.builder()
-                .sellers(sellers)
-                .buyers(buyers)
-                .vatAmountTotal(Utils.roundFloat(vatAmount, 2))
-                .total(Utils.roundFloat(total, 2))
-                .totalWithoutVAT(Utils.roundFloat((Utils.roundFloat(total, 2) - Utils.roundFloat(vatAmount, 2)), 2))
-                .highestInvoiceSum(Utils.roundFloat(highestInvoiceSum, 2))
-                .highestInvoiceBuyerName(highestBuyer)
-                .highestInvoiceSellerName(highestSeller)
-                .invoiceCount(invoices.size())
+
+        digit++;
+
+        return NextSerialResponse.builder()
+                .serial(nonDigit + digit)
                 .build();
     }
 
-    public String changeInfo(UserInfoRequest userInfo) {
-        User user = userRepo.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName());
-        if (user == null) {
-            user = getUserFromSecurityContext();
+
+    public List<CompanyResponse> getCompaniesByName(String name) {
+        User user = Utils.getUserFromSecurityContext();
+
+        List<Company> companies;
+
+        Limit limit = Limit.of(5);
+
+        if (!name.isEmpty()) {
+            companies = companyRepo.findByInvoicesBuyer_UserAndNameContainingIgnoreCaseOrderByCreatedAtDesc(user, name, limit);
+        } else {
+            companies = companyRepo.findByInvoicesBuyer_UserOrderByCreatedAtDesc(user, limit);
         }
-        user.setInfo(userInfo.getInfo());
-        userRepo.saveAndFlush(user);
-        return "Saved";
+
+        return Converter.companyListToCompanyResponse(companies);
     }
 
-    @Transactional
-    public String deleteUser() {
-        User user = userRepo.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName());
-        if (user == null) {
-            return "User not found";
-        }
-        Set<Long> companiesIdsToDelete = new HashSet<>();
-        for (Invoice invoice : user.getInvoices()) {
-            deleteCompanyIfNoAdditionalInvoices(invoice.getBuyer(), invoice.getSeller(), companiesIdsToDelete);
-        }
-        companyRepo.deleteByIdIsIn(companiesIdsToDelete);
-        userRepo.delete(user);
-        return "Deleted";
-    }
+    public List<ProductResponse> getProductsByName(String name) {
+        User user = Utils.getUserFromSecurityContext();
 
-    private void deleteCompanyIfNoAdditionalInvoices(Company buyer, Company seller, Set<Long> checkedCompanies) {
-        if (buyer.getInvoicesBuyer().size() == 1) {
-            checkedCompanies.add(buyer.getId());
+        List<Product> products;
+
+        Limit limit = Limit.of(5);
+
+        if (!name.isEmpty()) {
+            products = productRepo.findByInvoice_UserAndNameContainingIgnoreCaseOrderByCreatedAtDesc(user, name, limit);
+        } else {
+            products = productRepo.findByInvoice_UserOrderByCreatedAtDesc(user, limit);
         }
-        if (seller.getInvoicesSeller().size() == 1) {
-            checkedCompanies.add(seller.getId());
-        }
+
+        return products.stream()
+                .map(Converter::productToProductResponse)
+                .collect(Collectors.toList());
     }
 
     private void orderInvoices(List<InvoicePreviewResponse> invoiceDTOs, String orderBy,
                                Sort.Direction sortDirection) {
-
         Comparator<InvoicePreviewResponse> comparator = switch (orderBy) {
             case "serial" -> Comparator.comparing(InvoicePreviewResponse::getSerial);
             case "companyName" -> Comparator.comparing(InvoicePreviewResponse::getSellerName);
@@ -212,22 +207,6 @@ public class InvoiceService {
             comparator = comparator.reversed();
         }
         invoiceDTOs.sort(comparator);
-    }
-
-    private Invoice getInvoice(String buyer) {
-        Invoice filter = new Invoice();
-        if (buyer != null) {
-                Company buyerFilter = new Company();
-                buyerFilter.setName(buyer);
-                filter.setBuyer(buyerFilter);
-            }
-        return filter;
-    }
-
-    private User getUserFromSecurityContext() {
-        return User.builder()
-                .email(SecurityContextHolder.getContext().getAuthentication().getName())
-                .build();
     }
 
     private void replaceDuplicateCompanies(Invoice invoice) {

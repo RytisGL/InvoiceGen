@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -14,11 +14,12 @@ import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
+import {loadImageFromLocalStorage} from "../utils/Utils.js";
 
 const NavBar = () => {
-    const { isAuthenticated, logout } = useContext(AuthContext);
-    const [anchorElNav, setAnchorElNav] = React.useState(null);
-    const [anchorElUser, setAnchorElUser] = React.useState(null);
+    const { isAuthenticated, logout } = useContext(AuthContext); // Use userLogo from context
+    const [anchorElNav, setAnchorElNav] = useState(null);
+    const [anchorElUser, setAnchorElUser] = useState(null);
     const navigate = useNavigate();
 
     const handleOpenNavMenu = (event) => {
@@ -39,7 +40,6 @@ const NavBar = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/');
     };
 
     return (
@@ -95,23 +95,23 @@ const NavBar = () => {
                             }}
                         >
                             {isAuthenticated ? (
-                                <>
+                                <div>
                                     <MenuItem onClick={() => navigate('/valdymas')}>
                                         <Typography textAlign="center">Valdymas</Typography>
                                     </MenuItem>
                                     <MenuItem onClick={handleLogout}>
                                         <Typography textAlign="center">Logout</Typography>
                                     </MenuItem>
-                                </>
+                                </div>
                             ) : (
-                                <>
+                                <div>
                                     <MenuItem onClick={() => navigate('/login')}>
                                         <Typography textAlign="center">Login</Typography>
                                     </MenuItem>
                                     <MenuItem onClick={() => navigate('/register')}>
                                         <Typography textAlign="center">Register</Typography>
                                     </MenuItem>
-                                </>
+                                </div>
                             )}
                         </Menu>
                     </Box>
@@ -171,7 +171,8 @@ const NavBar = () => {
                     <Box sx={{ flexGrow: 0 }}>
                         <Tooltip title="Open settings">
                             <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
+                                <Avatar alt="User Avatar" src={loadImageFromLocalStorage()} /> {/* Use userLogo
+                                 from context */}
                             </IconButton>
                         </Tooltip>
                         <Menu
@@ -191,23 +192,23 @@ const NavBar = () => {
                             onClose={handleCloseUserMenu}
                         >
                             {isAuthenticated ? (
-                                <>
+                                <div>
                                     <MenuItem onClick={() => navigate('/valdymas')}>
                                         <Typography textAlign="center">Valdymas</Typography>
                                     </MenuItem>
                                     <MenuItem onClick={handleLogout}>
                                         <Typography textAlign="center">Logout</Typography>
                                     </MenuItem>
-                                </>
+                                </div>
                             ) : (
-                                <>
+                                <div>
                                     <MenuItem onClick={() => navigate('/login')}>
                                         <Typography textAlign="center">Login</Typography>
                                     </MenuItem>
                                     <MenuItem onClick={() => navigate('/register')}>
                                         <Typography textAlign="center">Register</Typography>
                                     </MenuItem>
-                                </>
+                                </div>
                             )}
                         </Menu>
                     </Box>

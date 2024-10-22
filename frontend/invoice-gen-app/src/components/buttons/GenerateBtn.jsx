@@ -3,7 +3,7 @@ import { Button } from "@mui/material";
 import ThreeSixtyIcon from '@mui/icons-material/ThreeSixty';
 import { generateAll } from '../../utils/Utils.js';
 
-export default function GenerateBtn({ fieldInputsArray, logo, style, className, size }) {
+export default function GenerateBtn({ fieldInputsArray, logo, style, className, size, disabled }) {
     return (
         <Button
             size={size}
@@ -15,6 +15,7 @@ export default function GenerateBtn({ fieldInputsArray, logo, style, className, 
             startIcon={<ThreeSixtyIcon />}
             type="button"
             onClick={() => generateAll(fieldInputsArray, logo)}
+            disabled={disabled} // Add the disabled prop
         >
             Generuoti
         </Button>

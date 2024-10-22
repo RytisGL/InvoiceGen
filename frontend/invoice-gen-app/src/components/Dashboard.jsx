@@ -1,7 +1,8 @@
+import React, {useEffect, useState, useContext} from "react";
+import {AuthContext} from "../context/AuthContext"; // Adjust the import path based on your folder structure
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import {Button, Collapse, TextField} from "@mui/material";
 import InvoiceOutput from "./InvoiceOutput.jsx";
-import {useEffect, useState} from "react";
 import axios from "axios";
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
@@ -17,6 +18,8 @@ import Profile from "./Profile.jsx";
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
 
 export default function Dashboard() {
+    const {checkJwtExpiration} = useContext(AuthContext); // Use
+    // AuthContext
     const [invoiceOutput, setInvoiceOutput] = useState([]);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
@@ -33,7 +36,6 @@ export default function Dashboard() {
     const [areButtonsExpanded, setAreButtonsExpanded] = useState(true);
 
     const handleCheckChange = async (id, isChecked) => {
-
         setCheckedInvoices((prevState) => {
             const updatedInvoices = isChecked
                 ? [...prevState, id]
@@ -41,19 +43,18 @@ export default function Dashboard() {
 
             // Now update checkedInvoiceData based on the new checkedInvoices
             updateCheckedInvoiceData(updatedInvoices, isChecked, id);
-
             return updatedInvoices;
         });
     };
 
     const updateCheckedInvoiceData = async (updatedInvoices, isChecked, id) => {
-        const jwtToken = localStorage.getItem('jwtToken');
+        await checkJwtExpiration();
 
         if (isChecked) {
             try {
                 const response = await axios.get(`http://localhost:8080/api/v1/invoice/${id}`, {
                     headers: {
-                        Authorization: `Bearer ${jwtToken}`
+                        Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
                     }
                 });
                 const invoice = response.data;
@@ -82,7 +83,6 @@ export default function Dashboard() {
                         buyerCmpnyCode: invoice.buyer.companyCode,
                         buyerTaxCode: invoice.buyer.companyVATCode,
                         issuedBy: invoice.issuedBy,
-                        contactInfo: invoice.contactInfo,
                     },
                 };
 
@@ -101,7 +101,7 @@ export default function Dashboard() {
     }, [checkedInvoices]);
 
     const fetchInvoiceData = async (pageNumber, filters, orderBy, direction) => {
-        const jwtToken = localStorage.getItem('jwtToken');
+        await checkJwtExpiration();
 
         try {
             const {dateFrom, buyer, seller} = filters;
@@ -117,7 +117,7 @@ export default function Dashboard() {
             const response = await axios.get(
                 `http://localhost:8080/api/v1/invoice/preview?${queryParams.toString()}`, {
                     headers: {
-                        Authorization: `Bearer ${jwtToken}`
+                        Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
                     }
                 }
             );
@@ -142,7 +142,9 @@ export default function Dashboard() {
     }, [activeComponent]);
 
     useEffect(() => {
-        fetchInvoiceData(page, filters, orderBy, direction);
+        if (activeComponent === 'InvoiceData') {
+            fetchInvoiceData(page, filters, orderBy, direction);
+        }
     }, [page, orderBy, direction, activeComponent]);
 
     const handleNextPage = () => {
@@ -190,20 +192,19 @@ export default function Dashboard() {
     };
 
     const handleDeleteInvoices = async () => {
-        const jwtToken = localStorage.getItem('jwtToken');
-
         if (checkedInvoices.length === 0) {
             return;
         }
 
+        await checkJwtExpiration();
+
         const ids = checkedInvoices.join(",");
-        console.log(ids);
 
         try {
             await axios.delete(`http://localhost:8080/api/v1/invoice`, {
                 params: {ids},
                 headers: {
-                    Authorization: `Bearer ${jwtToken}`
+                    Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
                 }
             });
             setCheckedInvoices([]);
@@ -249,7 +250,7 @@ export default function Dashboard() {
     const getButtonStyle = (component) => {
         return {
             marginTop: "10px",
-            background: activeComponent === component ? "#005f99" : "#6482AD", // Highlight active button
+            background: activeComponent === component ? "#005f99" : "#6482AD",
             justifyContent: "flex-start",
             display: "flex",
             alignItems: "center",
@@ -368,6 +369,7 @@ export default function Dashboard() {
                             className={"col-sm-10"}
                             component="label"
                             fieldInputsArray={checkedInvoiceData}
+                            logo={localStorage.getItem('userLogo')}
                             style={{
                                 marginTop: "10px",
                                 background: "#6482AD",

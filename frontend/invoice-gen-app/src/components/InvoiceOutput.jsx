@@ -2,10 +2,12 @@ import {Button} from "@mui/material";
 import * as React from "react";
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import {AuthContext} from "../context/AuthContext";
+import {useContext} from "react";
 
 export default function InvoiceOutput({invoice, onCheckChange}) {
     const {serial, sellerName, issueDate, sum, id} = invoice;
-
+    const {checkJwtExpiration} = useContext(AuthContext);
     const [isChecked, setIsChecked] = React.useState(false);
     const [isExpanded, setIsExpanded] = React.useState(false);
     const [invoiceDetails, setInvoiceDetails] = React.useState(null);
@@ -18,6 +20,7 @@ export default function InvoiceOutput({invoice, onCheckChange}) {
     };
 
     const handleExpandToggle = async () => {
+        await checkJwtExpiration();
         const jwtToken = localStorage.getItem('jwtToken');
 
         if (!isExpanded) {
@@ -59,7 +62,7 @@ export default function InvoiceOutput({invoice, onCheckChange}) {
                                                   style={{marginRight: "10px"}}/>
                     )}
                     <div className="col-2" style={{textAlign: "left"}}>{serial}</div>
-                    <div className="col-4" style={{textAlign: "left"}}>{sellerName}</div>
+                    <div className="col-4" style={{textAlign: "left"}}><strong>{sellerName}</strong></div>
                     <div className="col-3" style={{textAlign: "left"}}>{issueDate}</div>
                     <div className="col-2" style={{textAlign: "left"}}>{sum}€</div>
                 </div>

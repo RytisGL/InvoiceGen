@@ -13,7 +13,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/invoice")
+@RequestMapping("/api/v1/invoice")
 @RequiredArgsConstructor
 public class InvoiceController {
 
@@ -54,19 +54,18 @@ public class InvoiceController {
         return ResponseEntity.status(HttpStatus.OK).body(invoiceService.deleteInvoiceById(Utils.parseStringIdsToLongList(ids)));
     }
 
-    @GetMapping("/stats")
-    public ResponseEntity<StatsResponse> getStats(@RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
-        return ResponseEntity.status(HttpStatus.OK).body(invoiceService.getStats(startDate, endDate));
+    @GetMapping("/serial/next")
+    public ResponseEntity<NextSerialResponse> getInvoiceNextSerial() {
+        return ResponseEntity.status(HttpStatus.OK).body(invoiceService.getNextSerial());
     }
 
-    @PatchMapping("user/info")
-    public ResponseEntity<String> changeUserInfo(@RequestBody UserInfoRequest userInfo) {
-        return ResponseEntity.status(HttpStatus.OK).body(invoiceService.changeInfo(userInfo));
+    @GetMapping("/company")
+    public ResponseEntity<List<CompanyResponse>> getInvoiceCompany(@RequestParam String name) {
+        return ResponseEntity.status(HttpStatus.OK).body(invoiceService.getCompaniesByName(name));
     }
 
-    @DeleteMapping("user")
-    public ResponseEntity<String> deleteUser() {
-        return ResponseEntity.status(HttpStatus.OK).body(invoiceService.deleteUser());
+    @GetMapping("/product")
+    public ResponseEntity<List<ProductResponse>> getInvoiceProduct(@RequestParam String name) {
+        return ResponseEntity.status(HttpStatus.OK).body(invoiceService.getProductsByName(name));
     }
 }

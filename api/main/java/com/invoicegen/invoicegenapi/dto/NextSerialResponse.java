@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class QuickStatsResponse {
-    private Float totalSum;
-    private Integer totalCountInvoices;
-    private Float currentMonthTotal;
-    private Float previousMonthTotal;
+public class NextSerialResponse {
+    private String serial;
 }

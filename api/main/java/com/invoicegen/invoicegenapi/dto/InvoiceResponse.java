@@ -18,7 +18,6 @@ public class InvoiceResponse {
     private String serial;
     private LocalDate issueDate;
     private String issuedBy;
-    private String contactInfo;
     private CompanyResponse seller;
     private CompanyResponse buyer;
     private List<ProductResponse> products;

@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf";
+import {jsPDF} from "jspdf";
 import axios from "axios";
 
 export function numberToWordsInLithuanian(number) {
@@ -89,9 +89,10 @@ export function generateSingle(fieldInputs, logo) {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const centerX = pageWidth / 2;
+    const userInfo = localStorage.getItem('userInfo');
 
     if (logo !== undefined) {
-        doc.addImage(logo, 'PNG', 15, 10, 30, 20);
+        doc.addImage(logo, 'JPEG', 15, 10, 30, 20);
     }
 
     // Set the title
@@ -213,13 +214,8 @@ export function generateSingle(fieldInputs, logo) {
 
         Object.keys(colX).forEach((key, i) => {
             const text = rowValues[i];
-            console.log("key" + key);
-            console.log("index" + i);
-            console.log("here : " + text);
             const textWidth = doc.getTextWidth(text.toString());
-            console.log("1----");
             doc.text(text.toString(), colX[key] + colWidths[key] / 2 - textWidth / 2, yOffset + rowHeight - padding);
-            console.log("2----");
         });
 
         // Draw lines
@@ -254,11 +250,15 @@ export function generateSingle(fieldInputs, logo) {
     const issuedByText = 'Sąskaitą išrašė: ' + fieldInputs.infoInputsObj.issuedBy;
     doc.text(issuedByText, 10, pageHeight - 25);
 
+    if (userInfo !== '') {
+        fieldInputs.infoInputsObj.contactInfo = userInfo;
+    }
+
     // Add "Kontaktinė informacija:" centered at the bottom, 10 points lower
     if (fieldInputs.infoInputsObj.contactInfo) {
-        const contactText = 'Kontaktinė informacija: ' + fieldInputs.infoInputsObj.contactInfo;
-        const contactTextWidth = doc.getTextWidth(contactText);
-        doc.text(contactText, centerX - contactTextWidth / 2, pageHeight - 15);
+        const footer =  fieldInputs.infoInputsObj.contactInfo;
+        const contactTextWidth = doc.getTextWidth(footer);
+        doc.text(footer, centerX - contactTextWidth / 2, pageHeight - 15);
     }
 
     // Save the document with a unique file name
@@ -271,23 +271,33 @@ export function generateAll(fieldInputsArray, logo) {
     fieldInputsArray.forEach(fieldInputs => generateSingle(fieldInputs, logo));
 }
 
+// Function to convert Blob to Base64
+export const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+};
+
+// Load and display the image from localStorage
+export const loadImageFromLocalStorage = () => {
+    const base64Image = localStorage.getItem('userLogo');
+    if (base64Image) {
+        return base64Image;
+    } else {
+        return null;
+    }
+};
+
 export async function saveInvoice(fieldInputs) {
     const jwtToken = localStorage.getItem('jwtToken');
-    if (!jwtToken) {
-        console.error("JWT Token not found");
-        return;
-    }
 
     const invoiceRequest = {
         serial: fieldInputs[0].infoInputsObj.serial,
         issueDate: fieldInputs[0].infoInputsObj.issueDate,
         issuedBy: fieldInputs[0].infoInputsObj.issuedBy,
-        seller: {
-            name: fieldInputs[0].infoInputsObj.sellerName,
-            address: fieldInputs[0].infoInputsObj.sellerAddress,
-            companyCode: fieldInputs[0].infoInputsObj.sellerCmpnyCode,
-            companyVATCode: fieldInputs[0].infoInputsObj.sellerTaxCode,
-        },
         buyer: {
             name: fieldInputs[0].infoInputsObj.buyerName,
             address: fieldInputs[0].infoInputsObj.buyerAddress,

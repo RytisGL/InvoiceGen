@@ -1,14 +1,12 @@
 import {Button} from "@mui/material";
 import ImageUpload from "./buttons/ImageUpload.jsx";
 import GenData from "./GenData.jsx";
-import {useEffect, useState} from "react";
+import { useEffect, useState} from "react";
 import InfoInputs from "./InfoInputs.jsx";
 import GenerateBtn from "./buttons/GenerateBtn.jsx";
-import SaveBtn from "./buttons/SaveBtn.jsx";
 
 export default function Generator() {
     const [components, setComponents] = useState([<GenData index={0} key={0} sendDataToParent={handleProductInputs} />]);
-
     const [logo, setLogo] = useState();
 
     const [fieldInputs, setFieldInputs] = useState([
@@ -115,7 +113,6 @@ export default function Generator() {
 
     // Handle effects or debugging purposes if necessary
     useEffect(() => {
-        console.log("Updated Product Data:", fieldInputs[0].productDataObj);
     }, [fieldInputs]);
 
     return (
@@ -214,7 +211,7 @@ export default function Generator() {
                     <div className="row" style={{justifyContent: "center"}}>
                         <div className="col-sm-4">
                             <InfoInputs sendDataToParent={handleTitleInputs} id={"contactInfo"}
-                                        placeHldr={"Kontaktinė informacija (Nebūtina)"}/>
+                                        placeHldr={"Papildoma informacija (Nebūtina)"}/>
                         </div>
                     </div>
                 </div>

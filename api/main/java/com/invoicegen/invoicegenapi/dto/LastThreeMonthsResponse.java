@@ -11,10 +11,6 @@ import java.util.HashMap;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class StatsResponse {
-    private Float total;
-    private Float totalWithoutVAT;
-    private Float vatAmountTotal;
-    private HashMap<String, Float> buyers;
-    private Integer invoiceCount;
+public class LastThreeMonthsResponse {
+    private HashMap<Integer, Float> totalsEachMonth;
 }

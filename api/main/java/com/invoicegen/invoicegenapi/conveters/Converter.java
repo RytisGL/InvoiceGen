@@ -44,7 +44,6 @@ public abstract class Converter {
         Invoice invoice = new Invoice();
         invoice.setSerial(invoiceRequest.getSerial());
         invoice.setBuyer(companyRequestToCompany(invoiceRequest.getBuyer()));
-        invoice.setSeller(companyRequestToCompany(invoiceRequest.getSeller()));
         invoice.setIssueDate(invoiceRequest.getIssueDate());
         invoice.setIssuedBy(invoiceRequest.getIssuedBy());
         invoice.setProducts(companyRequestListToCompanyList(invoiceRequest.getProductList(), invoice));
@@ -59,6 +58,14 @@ public abstract class Converter {
                 .companyCode(company.getCompanyCode())
                 .companyVATCode(company.getCompanyVATCode())
                 .build();
+    }
+
+    public static List<CompanyResponse> companyListToCompanyResponse(List<Company> companyList) {
+        List<CompanyResponse> companyResponseList = new ArrayList<>();
+        for (Company company : companyList) {
+            companyResponseList.add(companyToCompanyResponse(company));
+        }
+        return companyResponseList;
     }
 
     public static ProductResponse productToProductResponse(Product product) {
@@ -96,12 +103,12 @@ public abstract class Converter {
         return invoiceResponse;
     }
 
-    public static InvoicePreviewResponse invoicePreviewToInvoicePreviewResponse(Invoice invoice) {
+    public static InvoicePreviewResponse invoiceToInvoicePreviewResponse(Invoice invoice) {
         return InvoicePreviewResponse.builder()
                 .serial(invoice.getSerial())
                 .id(invoice.getId())
                 .issueDate(invoice.getIssueDate())
-                .sum(Utils.countTotalSum(invoice))
+                .sum(Utils.countTotalInvoiceSum(invoice))
                 .sellerName(invoice.getBuyer().getName())
                 .build();
     }

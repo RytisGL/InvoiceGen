@@ -4,7 +4,6 @@ import App from './App.jsx'
 import './assets/arialuni-normal.js'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
     <App />
-  </StrictMode>,
+  ,
 )
